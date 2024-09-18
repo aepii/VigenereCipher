@@ -1,52 +1,45 @@
-"""
-Task 2: Next, you are expected to implement a brute force password cracker based on the Vigenère
-Cipher you just implemented. Your password cracker is expected to take three parameters: (1) a string
-of ciphertext; (2) an integer keyLength that denotes the length of the key; and (3) an integer
-firstWordLength that denotes the length of the first word of the plaintext.
-Your password cracker will test every possible key that has the length of keyLength: from all "A"s to all
-"Z"s. You cannot exploit the dictionary to guess the key, since the key may not be a valid word.
-For each key candidate, you will generate a "plaintext", and compare it with the dictionary (provided to
-you). In particular, you only need to check if the first word (number of letters of the word is given in
-firstWordLength) is a valid word in the dictionary. To do this, you need to load the dictionary into
-memory before processing any key, and search if the first word of the "plaintext" is in the dictionary. If
-Yes, display the plaintext and the key. However, do not stop, as the "plaintext" might be wrong.
-Efficiency is very important in evaluating each "plaintext" candidate. In some cases, a wrong key may
-generate a valid first word. Hence, you may get several "plaintexts" after all possible keys are tested.
-This is acceptable. You can look at the outputs and determine which key is correct.
-"""
+import vigenere_cipher # Import Vigenere Cipher. 
 
-import vigenere_cipher
+import time # Import time.
 
-ALPHABET = [chr(i) for i in range(65, 91)]  
-WORD_DICT = set()
+ALPHABET = [chr(i) for i in range(65, 91)] # Array containing letters A-Z.
+WORD_DICT = set() # Set containing words from dictionary.
 
+# Generates possible keys and attempts a crack with generated key.
 def generate_possible_keys(cipher_text, length, first_word_length):
-    keys = ['']
-    possible_keys = []
+    keys = [''] # Empty key array.
+    possible_keys = [] # Keys that are a possible match.
+
+    start = time.time() # Start time.
     
+    # Generate possible keys.
     for _ in range(length):
         new_keys = []
         for key in keys:
             for letter in ALPHABET:
                 new_key = key + letter
                 new_keys.append(new_key)
-                if attempt_brute_force(cipher_text, new_key, first_word_length):
-                    possible_keys.append(new_key)
+                if attempt_brute_force(cipher_text, new_key, first_word_length): # Attempt a crack.
+                    possible_keys.append(new_key) # If it hits, add it to possible keys.
                 
         keys = new_keys
 
-    return possible_keys
-    
+    end = time.time() # End time.
+    print(f"Elapsed Time: {end - start}")
+    return possible_keys # Return all possible keys that were a hit.
+
+# Attempt a crack. 
 def attempt_brute_force(cipher_text, key, first_word_length):
-    decoded_text = vigenere_cipher.recursive_decrypt(cipher_text, key)
+    decoded_text = vigenere_cipher.recursive_decrypt(cipher_text, key) # Decrypt text given key.
     first_word = decoded_text[:first_word_length]
 
-    if first_word in WORD_DICT:
+    if first_word in WORD_DICT: # If the word exist in the dictionary, its a hit.
         print(f"Possible Key Found: {key}, Plaintext: {decoded_text}")
         return True
     
     return False
-        
+
+# Loads dictionary from file.
 def load_dictionary():
     global WORD_DICT
     with open("MP1_dict.txt") as file:
