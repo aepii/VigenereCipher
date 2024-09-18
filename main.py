@@ -1,57 +1,73 @@
 """
-Task 1: In this mini project, you are first asked to implement a simple Vigenère Cipher.
-• The algorithm for encryption: EK(m) = m + K mod 26
-• The algorithm for decryption: DK(m) = m - K mod 26
-Format: (1) the plaintext/ciphertext should only contain letters (but you do not need to check the
-validity of the input. We assume that the input is always valid). (2) Spaces in the plaintext should be
-removed. (3) Your input/output should be text strings, with both uppercase and lowercase letters. The
-same letter in upper and lower cases are treated as the same. That is, both "A" and "a" must be
-converted to "1" (or "0") in your program.
+Task 2: Next, you are expected to implement a brute force password cracker based on the Vigenère
+Cipher you just implemented. Your password cracker is expected to take three parameters: (1) a string
+of ciphertext; (2) an integer keyLength that denotes the length of the key; and (3) an integer
+firstWordLength that denotes the length of the first word of the plaintext.
+Your password cracker will test every possible key that has the length of keyLength: from all "A"s to all
+"Z"s. You cannot exploit the dictionary to guess the key, since the key may not be a valid word.
+For each key candidate, you will generate a "plaintext", and compare it with the dictionary (provided to
+you). In particular, you only need to check if the first word (number of letters of the word is given in
+firstWordLength) is a valid word in the dictionary. To do this, you need to load the dictionary into
+memory before processing any key, and search if the first word of the "plaintext" is in the dictionary. If
+Yes, display the plaintext and the key. However, do not stop, as the "plaintext" might be wrong.
+Efficiency is very important in evaluating each "plaintext" candidate. In some cases, a wrong key may
+generate a valid first word. Hence, you may get several "plaintexts" after all possible keys are tested.
+This is acceptable. You can look at the outputs and determine which key is correct.
 """
 
-BASE = ord("a")
-MOD = 26
+import vigenere_cipher
 
-class VigenereCipher:
+ALPHABET = [chr(i) for i in range(65, 91)]  
+WORD_DICT = set()
 
-    def __init__(self, plain_text, key):
-        self.plain_text = self.parse_string(plain_text)
-        self.key = self.parse_string(key)
-
-    @staticmethod
-    def parse_string(string):
-        return string.lower().replace(" ", "")
-
-    def recursive_encrypt(self):
-        cipher_text = ""
-        for index, letter in enumerate(self.plain_text):
-            current_key = self.key[index % len(self.key)]
-            cipher_text += self._single_encrypt(letter, current_key)
-        return cipher_text
-
-    @staticmethod
-    def _single_encrypt(letter, key):
-        return chr((ord(letter) - BASE + ord(key) - BASE) % MOD + BASE)
+def generate_possible_keys(cipher_text, length, first_word_length):
+    keys = ['']
+    possible_keys = []
     
-    def recursive_decrypt(self, cipher_text):
-        decoded_text = ""
-        for index, letter in enumerate(cipher_text):
-            current_key = self.key[index % len(self.key)]
-            decoded_text += self._single_decrypt(letter, current_key)
-        return decoded_text
+    for _ in range(length):
+        new_keys = []
+        for key in keys:
+            for letter in ALPHABET:
+                new_key = key + letter
+                new_keys.append(new_key)
+                if attempt_brute_force(cipher_text, new_key, first_word_length):
+                    possible_keys.append(new_key)
+                
+        keys = new_keys
 
-    @staticmethod
-    def _single_decrypt(letter, key):
-        return chr((ord(letter) - ord(key) + MOD) % MOD + BASE)
+    return possible_keys
+    
+def attempt_brute_force(cipher_text, key, first_word_length):
+    decoded_text = vigenere_cipher.recursive_decrypt(cipher_text, key)
+    first_word = decoded_text[:first_word_length]
+
+    if first_word in WORD_DICT:
+        print(f"Possible Key Found: {key}, Plaintext: {decoded_text}")
+        return True
+    
+    return False
+        
+def load_dictionary():
+    global WORD_DICT
+    with open("MP1_dict.txt") as file:
+        WORD_DICT = set(word.strip().upper() for word in file) 
 
 def main():
-    plain_text = "Hello World"
-    key = "Test"
-    vigenere_cipher = VigenereCipher(plain_text, key)
-    cipher_text = vigenere_cipher.recursive_encrypt()
-    print(cipher_text)
-    decoded_text = vigenere_cipher.recursive_decrypt(cipher_text)
-    print(decoded_text)
+    print("Loading Dictionary.")
+    load_dictionary()
+    print("Loaded Dictionary.\n")
+
+    cipher_texts = ["MSOKKJCOSXOEEKDTOSLGFWCMCHSUSGX", "PSPDYLOAFSGFREQKKPOERNIYVSDZSUOVGXSRRIPWERDIPCFSDIQZIASEJVCGXAYBGYXFPSREKFMEXEBIYDGFKREOWGXEQSXSKXGYRRRVMEKFFIPIWJSKFDJMBGCC",
+                    "MTZHZEOQKASVBDOWMWMKMNYIIHVWPEXJA", "SQLIMXEEKSXMDOSBITOTYVECRDXSCRURZYPOHRG", "LDWMEKPOPSWNOAVBIDHIPCEWAETYRVOAUPSINOVDIEDHCDSELHCCPVHRPOHZUSERSFS", 
+                    "VVVLZWWPBWHZDKBTXLDCGOTGTGRWAQWZSDHEMXLBELUMO"]
+    key_lengths = [2, 3, 4, 5, 6, 7]
+    first_word_lengths = [6, 7, 10, 11, 9, 13]
+
+
+    for index, cipher_text in enumerate(cipher_texts):
+        print(f"Generating Possible Keys For {cipher_text}.")
+        possible_keys = generate_possible_keys(cipher_text, key_lengths[index], first_word_lengths[index])
+        print(f"Generated Possible Keys For {cipher_text}.: {possible_keys}\n")
 
 
 if __name__ == "__main__":
